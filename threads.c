@@ -23,7 +23,7 @@ void	*monitor(void *data_pointer)
 	while (philo->data->dead == 0)
 	{
 		pthread_mutex_lock(&philo->lock);
-		if (philo->data->done >= philo->data->philo_nb)
+		if (philo->data->finished >= philo->data->philo_num)
 			philo->data->dead = 1;
 		pthread_mutex_unlock(&philo->lock);
 	}
@@ -39,12 +39,12 @@ void	*supervisor(void *philo_pointer)
 	{
 		pthread_mutex_lock(&philo->lock);
 		if (get_time() >= philo->time_to_die && philo->eating == 0)
-			messages("died", philo);
-		if (philo->meals_eaten == philo->data->meals_nb)
+			messages(DIED, philo);
+		if (philo->eat_cont == philo->data->meals_nb)
 		{
 			pthread_mutex_lock(&philo->data->lock);
-			philo->data->done++;
-			philo->meals_eaten++;
+			philo->data->finished++;
+			philo->eat_cont++;
 			pthread_mutex_unlock(&philo->data->lock);
 		}
 		pthread_mutex_unlock(&philo->lock);
@@ -63,7 +63,7 @@ void	*routine(void *philo_pointer)
 	while (philo->data->dead == 0)
 	{
 		eat(philo);
-		messages("is thinking", philo);
+		messages(THINKING, philo);
 	}
 	if (pthread_join(philo->t1, NULL))
 		return ((void *)1);
@@ -75,24 +75,24 @@ int	thread_init(t_data *data)
 	int			i;
 	pthread_t	t0;
 
+	i = -1;
 	data->start_time = get_time();
 	if (data->meals_nb > 0)
 	{
 		if (pthread_create(&t0, NULL, &monitor, &data->philos[0]))
-			return (error("Error while creating threads", NULL));
+			return (error(TH_ERR, data));
 	}
-	i = -1;
-	while (++i < data->philo_nb)
+	while (++i < data->philo_num)
 	{
 		if (pthread_create(&data->tid[i], NULL, &routine, &data->philos[i]))
-			return (error("Error while creating threads", NULL));
+			return (error(TH_ERR, data));
 		ft_usleep(1);
 	}
 	i = -1;
-	while (++i < data->philo_nb)
+	while (++i < data->philo_num)
 	{
 		if (pthread_join(data->tid[i], NULL))
-			return (error("Error while joining threads", NULL));
+			return (error(JOIN_ERR, data));
 	}
 	return (0);
 }

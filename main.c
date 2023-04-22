@@ -16,7 +16,7 @@ int	case_one(t_data *data)
 {
 	data->start_time = get_time();
 	if (pthread_create(&data->tid[0], NULL, &routine, &data->philos[0]))
-		return (error("Error while creating thread", data));
+		return (error(TH_ERR, data));
 	pthread_detach(data->tid[0]);
 	while (data->dead == 0)
 		ft_usleep(0);
@@ -24,7 +24,7 @@ int	case_one(t_data *data)
 	return (0);
 }
 
-void	clear_data(t_data *data)
+void	clear_data(t_data	*data)
 {
 	if (data->tid)
 		free(data->tid);
@@ -39,7 +39,7 @@ void	ft_exit(t_data *data)
 	int	i;
 
 	i = -1;
-	while (++i < data->philo_nb)
+	while (++i < data->philo_num)
 	{
 		pthread_mutex_destroy(&data->forks[i]);
 		pthread_mutex_destroy(&data->philos[i].lock);
@@ -62,13 +62,15 @@ int	main(int argc, char **argv)
 	t_data	data;
 
 	if (argc < 5 || argc > 6)
-		return (error("Invalid number of arguments.", NULL));
-	if (check_input(argv))
+		return (1);
+	if (input_checker(argv))
 		return (1);
 	if (init(&data, argv, argc))
 		return (1);
-	if (data.philo_nb == 1)
+	if (data.philo_num == 1)
 		return (case_one(&data));
-	thread_init(&data);
+	if (thread_init(&data))
+		return (1);
+	ft_exit(&data);
 	return (0);
 }
